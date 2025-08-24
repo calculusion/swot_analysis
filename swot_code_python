@@ -1,0 +1,119 @@
+import pandas as pd
+import re
+
+# --- Configuration ---
+# This script requires pandas. Install it by running: pip install pandas
+FILE_PATH = '#honest - Your take on Instagram (Responses).xlsx - Form Responses 1.csv'
+
+def clean_column_names(df):
+    """
+    Cleans up the column names to make them easier to work with in pandas.
+    """
+    new_cols = {}
+    for col in df.columns:
+        clean_col = col.strip()
+        if "primary reason" in col:
+            new_cols[col] = "primary_reason"
+        elif "How satisfied" in col:
+            new_cols[col] = "satisfaction_score"
+        elif "trust Instagram? " in col:
+            new_cols[col] = "trust_score"
+        elif "photo-sharing platform" in col:
+            new_cols[col] = "is_photo_platform"
+        elif "compete with Instagram" in col:
+            new_cols[col] = "competitor_features"
+        elif "thoughts on Instagram" in col:
+            new_cols[col] = "general_feedback"
+    df = df.rename(columns=new_cols)
+    return df
+
+def generate_swot_analysis(df):
+    """
+    Analyzes the dataframe to generate a data-driven SWOT analysis.
+    """
+    print("--- SWOT Analysis Data Model ---")
+    print("Quantifying each point from the survey data.\n")
+
+    total_responses = len(df)
+    print(f"Total Survey Responses: {total_responses}\n")
+
+    # --- STRENGTHS ---
+    print("--- STRENGTHS ---")
+    # High User Engagement & Dominant Content Hub
+    strength_reasons = [
+        "Watching Reels, Stories, and posts for fun",
+        "Staying connected with friends and family",
+        "Keeping up with public figures and their content"
+    ]
+    strength_count = df['primary_reason'].isin(strength_reasons).sum()
+    strength_percentage = (strength_count / total_responses) * 100
+    print(f"1. High Engagement & Content Hub:")
+    print(f"   - {strength_count} out of {total_responses} ({strength_percentage:.2f}%) use Instagram primarily for entertainment, connection, or following public figures.\n")
+
+    # --- WEAKNESSES ---
+    print("--- WEAKNESSES ---")
+    # Critical Trust Deficit
+    trust_scores = pd.to_numeric(df['trust_score'], errors='coerce')
+    low_trust_count = (trust_scores <= 4).sum()
+    low_trust_percentage = (low_trust_count / total_responses) * 100
+    print(f"1. Critical Trust Deficit:")
+    print(f"   - {low_trust_count} respondents ({low_trust_percentage:.2f}%) gave a trust score of 4 or less out of 10.\n")
+
+    # Platform Identity Crisis
+    photo_platform_col = df['is_photo_platform'].str.lower().str.strip()
+    identity_crisis_count = photo_platform_col.str.contains('no', na=False).sum()
+    identity_crisis_percentage = (identity_crisis_count / total_responses) * 100
+    print(f"2. Platform Identity Crisis:")
+    print(f"   - {identity_crisis_count} respondents ({identity_crisis_percentage:.2f}%) explicitly state Instagram is no longer a photo-first platform.\n")
+
+    # Feature Fatigue & Complexity
+    feedback_col = df['general_feedback'].dropna().str.lower()
+    complexity_keywords = ['overwhelmed', 'cluttered', 'crowded', 'complex', 'too much']
+    complexity_mentions = feedback_col.str.contains('|'.join(complexity_keywords), na=False).sum()
+    complexity_percentage = (complexity_mentions / total_responses) * 100
+    print(f"3. Feature Fatigue & Complexity:")
+    print(f"   - Keywords related to complexity were found in comments, with {complexity_mentions} direct mentions ({complexity_percentage:.2f}% of all responses).\n")
+
+    # --- OPPORTUNITIES ---
+    print("--- OPPORTUNITIES ---")
+    # Market Gap for Simplicity & Monetize Trust
+    competitor_col = df['competitor_features'].dropna().str.lower()
+    opportunity_keywords = ['privacy', 'simple', 'photo', 'less ads', 'control', 'secure']
+    opportunity_mentions = competitor_col.str.contains('|'.join(opportunity_keywords), na=False).sum()
+    opportunity_percentage = (opportunity_mentions / total_responses) * 100
+    print(f"1. Market Gap for Simplicity, Privacy, and Photo-Focus:")
+    print(f"   - {opportunity_mentions} respondents ({opportunity_percentage:.2f}%) mentioned wanting features related to simplicity, privacy, or photography in a competitor app.\n")
+
+    # --- THREATS ---
+    print("--- THREATS ---")
+    # Emergence of a Niche Competitor
+    print(f"1. Emergence of a Niche Competitor:")
+    print(f"   - The threat is quantified by the opportunity: {opportunity_mentions} users ({opportunity_percentage:.2f}%) are actively looking for an alternative that addresses Instagram's weaknesses.\n")
+
+    # User Churn and Disengagement
+    satisfaction_scores = pd.to_numeric(df['satisfaction_score'], errors='coerce')
+    low_satisfaction_count = (satisfaction_scores <= 2).sum()
+    low_satisfaction_percentage = (low_satisfaction_count / total_responses) * 100
+    print(f"2. User Churn and Disengagement:")
+    print(f"   - {low_satisfaction_count} respondents ({low_satisfaction_percentage:.2f}%) reported very low satisfaction (a score of 1 or 2), indicating a high risk of churn.\n")
+
+    print("-" * 50)
+
+
+def main():
+    """
+    Main function to load data and run the SWOT analysis.
+    """
+    try:
+        df = pd.read_csv("#honest - Your take on Instagram (Responses).csv")
+        df = clean_column_names(df)
+        generate_swot_analysis(df)
+
+    except FileNotFoundError:
+        print(f"Error: The file '{FILE_PATH}' was not found.")
+        print("Please make sure the CSV file is in the same directory as this script.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
